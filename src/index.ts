@@ -3,6 +3,7 @@ import express from 'express'
 import { setupSecurity } from './middleware/security.js'
 import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
 import { getChart, getQuotes } from './routes/stocks.js'
+import { testConnection, closePool } from './config/database.js'
 
 const app = express()
 const PORT = process.env.PORT || 4040
@@ -25,8 +26,30 @@ app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
 })
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`)
   console.log(`📋 Health check: http://localhost:${PORT}/health`)
+  
+  // Test database connection
+  await testConnection()
+})
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received: closing HTTP server')
+  server.close(async () => {
+    console.log('HTTP server closed')
+    await closePool()
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT signal received: closing HTTP server')
+  server.close(async () => {
+    console.log('HTTP server closed')
+    await closePool()
+    process.exit(0)
+  })
 })
 
