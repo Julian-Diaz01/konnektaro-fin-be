@@ -36,12 +36,15 @@ export async function getChart (req: Request, res: Response): Promise<void> {
     const result = await yahooFinance.chart(symbol, {
       interval: interval as '1d' | '5m' | '1h' | '15m' | '30m' | '60m' | '1wk' | '1mo',
       period1: startDate,
-      period2: new Date()
+      period2: new Date(),
+      return: 'array' as const
     })
 
+    const chartData = result as { quotes: Array<{ date: Date; close: number | null }> }
+
     const data = {
-      timestamp: result.quotes.map(q => Math.floor(q.date.getTime() / 1000)),
-      closes: result.quotes.map(q => q.close ?? null)
+      timestamp: chartData.quotes.map((q) => Math.floor(q.date.getTime() / 1000)),
+      closes: chartData.quotes.map((q) => q.close ?? null)
     }
 
     res.json(data)
@@ -62,10 +65,14 @@ export async function getQuotes (req: Request, res: Response): Promise<void> {
   const symbols = symbolsParam.split(',').filter(s => s.trim())
 
   try {
-    const results = await yahooFinance.quote(symbols)
-    const quotes = Array.isArray(results) ? results : [results]
+    const results = await yahooFinance.quote(symbols) as Array<{
+      symbol: string
+      regularMarketPrice?: number
+      regularMarketChange?: number
+      regularMarketChangePercent?: number
+    }>
 
-    const data = quotes.map((q: any) => ({
+    const data = results.map((q) => ({
       symbol: q.symbol,
       regularMarketPrice: q.regularMarketPrice,
       regularMarketChange: q.regularMarketChange,
