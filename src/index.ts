@@ -3,7 +3,7 @@ import express from 'express'
 import { setupSecurity } from './middleware/security.js'
 import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
 import { getChart, getQuotes } from './routes/stocks.js'
-import { testConnection, closePool } from './config/database.js'
+import { testConnection, closeConnection } from './services/database.js'
 
 const app = express()
 const PORT = process.env.PORT || 4040
@@ -31,7 +31,12 @@ const server = app.listen(PORT, async () => {
   console.log(`📋 Health check: http://localhost:${PORT}/health`)
   
   // Test database connection
-  await testConnection()
+  const dbTest = await testConnection()
+  if (dbTest.success) {
+    console.log('✅ Database connected:', dbTest.timestamp)
+  } else {
+    console.error('❌ Database connection failed:', dbTest.error)
+  }
 })
 
 // Graceful shutdown
@@ -39,7 +44,7 @@ process.on('SIGTERM', async () => {
   console.log('SIGTERM signal received: closing HTTP server')
   server.close(async () => {
     console.log('HTTP server closed')
-    await closePool()
+    await closeConnection()
     process.exit(0)
   })
 })
@@ -48,7 +53,7 @@ process.on('SIGINT', async () => {
   console.log('SIGINT signal received: closing HTTP server')
   server.close(async () => {
     console.log('HTTP server closed')
-    await closePool()
+    await closeConnection()
     process.exit(0)
   })
 })
