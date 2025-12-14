@@ -3,7 +3,8 @@ import express from 'express'
 import { setupSecurity } from './middleware/security.js'
 import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
 import { getChart, getQuotes } from './routes/stocks.js'
-import { testConnection, closeConnection } from './services/database.js'
+import { getCurrentUser, createUser, updateUser, deleteUser } from './routes/users.js'
+import { testConnection, closeConnection } from './services/testConnection.js'
 
 const app = express()
 const PORT = process.env.PORT || 4040
@@ -24,6 +25,12 @@ app.get('/api/stocks/quotes', getQuotes) //TODO ADD AUTH
 app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
   res.json({ user: req.user })
 })
+
+// User routes
+app.get('/api/users/me', authenticateToken, getCurrentUser)
+app.post('/api/users/me', authenticateToken, createUser)
+app.put('/api/users/me', authenticateToken, updateUser)
+app.delete('/api/users/me', authenticateToken, deleteUser)
 
 // Start server
 const server = app.listen(PORT, async () => {

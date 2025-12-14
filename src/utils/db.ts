@@ -1,7 +1,7 @@
 import sql from '../config/database.js'
 
 export async function transaction<T> (
-  callback: (sql: typeof import('../config/database.js').default) => Promise<T>
+  callback: (txSql: typeof import('../config/database.js').default) => Promise<T>
 ): Promise<T> {
   try {
     const result = await sql.begin(async txSql => {
