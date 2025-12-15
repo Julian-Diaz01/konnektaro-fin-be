@@ -18,8 +18,8 @@ app.get('/health', (_req, res) => {
 })
 
 // Stocks endpoints
-app.get('/api/stocks/chart', getChart) //TODO ADD AUTH
-app.get('/api/stocks/quotes', getQuotes) //TODO ADD AUTH
+app.get('/api/stocks/chart', authenticateToken, getChart)
+app.get('/api/stocks/quotes', authenticateToken, getQuotes)
 
 // Protected routes
 app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
