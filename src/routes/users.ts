@@ -136,7 +136,7 @@ export async function updateUser (
       return
     }
 
-    res.json({ user: mapRowToUserProfile(rows[0]) })
+    res.json(mapRowToUserProfile(rows[0]))
   } catch (error) {
     console.error('Error updating user profile:', error)
     res.status(500).json({ error: 'Failed to update user profile' })
