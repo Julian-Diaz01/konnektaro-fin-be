@@ -8,7 +8,7 @@ function mapRowToUserProfile (row: any): UserProfile {
   return {
     uid: row.uid,
     email: row.email,
-    displayName: row?.display_name ?? (row?.name && row?.last_name ? row?.name + ' ' + row?.last_name : null),
+    displayName: row?.display_name,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }
@@ -55,7 +55,7 @@ export async function getCurrentUser (
       return
     }
 
-    res.json({ user: mapRowToUserProfile(rows[0]) })
+    res.json(mapRowToUserProfile(rows[0]))
   } catch (error) {
     console.error('Error fetching user profile:', error)
     res.status(500).json({ error: 'Failed to fetch user profile' })
@@ -75,7 +75,7 @@ export async function createUser (
 
   // All data comes from Firebase token
   const email = req.user.email ?? null
-  const displayName = null
+  const displayName = req.user.displayName ?? null
 
   if (!email) {
     res.status(400).json({ error: 'Email is required in Firebase token' })

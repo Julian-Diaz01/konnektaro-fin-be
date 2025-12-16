@@ -5,6 +5,7 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     uid: string
     email?: string
+    displayName?: string
   }
 }
 
@@ -32,7 +33,8 @@ export async function authenticateToken (
 
     req.user = {
       uid: decodedToken.uid,
-      email: decodedToken.email
+      email: decodedToken.email,
+      displayName: decodedToken.name
     }
 
     next()
