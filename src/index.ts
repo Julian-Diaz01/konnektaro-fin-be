@@ -2,7 +2,7 @@ import 'dotenv/config'
 import express from 'express'
 import { setupSecurity } from './middleware/security.js'
 import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
-import { getChart, getQuotes } from './routes/stocks.js'
+import { getChart, getQuotes } from './routes/marketData.js'
 import { getCurrentUser, createUser, updateUser, deleteUser } from './routes/users.js'
 import { testConnection, closeConnection } from './services/testConnection.js'
 
@@ -17,9 +17,11 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Stocks endpoints
-app.get('/api/stocks/chart', authenticateToken, getChart)
-app.get('/api/stocks/quotes', authenticateToken, getQuotes)
+// Market data endpoints
+app.get('/api/market-data/stocks/chart', authenticateToken, getChart)
+app.get('/api/market-data/stocks/quotes', authenticateToken, getQuotes)
+
+// Portfolio endpoints
 
 // Protected routes
 app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
