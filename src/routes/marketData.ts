@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express'
-import yahooFinance from 'yahoo-finance2'
+import YahooFinance from 'yahoo-finance2'
+
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
 
 function getStartDate (range: string): Date {
   const now = new Date()
