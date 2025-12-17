@@ -5,6 +5,7 @@ import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
 import { getChart, getQuotes } from './routes/marketData.js'
 import { getCurrentUser, createUser, updateUser, deleteUser } from './routes/users.js'
 import { testConnection, closeConnection } from './services/testConnection.js'
+import { createUserStock, deleteUserStock, getUserStocks } from './routes/userStocks.js'
 
 const app = express()
 const PORT = process.env.PORT || 4040
@@ -22,6 +23,9 @@ app.get('/api/market-data/stocks/chart', authenticateToken, getChart)
 app.get('/api/market-data/stocks/quotes', authenticateToken, getQuotes)
 
 // Portfolio endpoints
+app.get('/api/portfolio/stocks', authenticateToken, getUserStocks)
+app.post('/api/portfolio/stocks', authenticateToken, createUserStock)
+app.delete('/api/portfolio/stocks/:id', authenticateToken, deleteUserStock)
 
 // Protected routes
 app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
