@@ -36,11 +36,6 @@ async function ensureUserStocksTable () {
     )
   `
 
-  await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS user_stocks_uid_symbol_uniq
-    ON user_stocks(uid, symbol)
-  `
-
   isUserStocksTableInitialized = true
 }
 
@@ -107,11 +102,6 @@ export async function createUserStock (req: AuthenticatedRequest, res: Response)
     const rows = await sql`
       INSERT INTO user_stocks (uid, symbol, quantity, purchase_price, purchase_date)
       VALUES (${req.user.uid}, ${symbol}, ${safeQuantity}, ${purchasePrice}, ${purchaseDate})
-      ON CONFLICT (uid, symbol) DO UPDATE
-      SET quantity = EXCLUDED.quantity,
-          purchase_price = EXCLUDED.purchase_price,
-          purchase_date = EXCLUDED.purchase_date,
-          updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `
 
