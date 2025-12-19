@@ -8,10 +8,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "setup-db": "tsx scripts/setup-db.ts",
     "db:start": "docker-compose up -d",
     "db:stop": "docker-compose down",
-    "db:logs": "docker-compose logs -f postgres"
+    "db:logs": "docker-compose logs -f postgres",
+    "redis:logs": "docker-compose logs -f redis"
   },
   "keywords": [],
   "author": "",
@@ -25,6 +25,7 @@
     "firebase-admin": "^12.6.0",
     "helmet": "^8.0.0",
     "postgres": "^3.4.7",
+    "redis": "^5.10.0",
     "yahoo-finance2": "^3.10.2"
   },
   "devDependencies": {
