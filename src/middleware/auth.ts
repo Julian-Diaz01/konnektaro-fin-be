@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from 'express'
 import { auth } from '../config/firebase.js'
-import type { Uid } from '../models/ids.js'
 
 export interface AuthenticatedRequest extends Request {
   user?: {
