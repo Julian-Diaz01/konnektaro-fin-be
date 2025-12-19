@@ -6,6 +6,7 @@ import { getChart, getQuotes } from './routes/marketData.js'
 import { getCurrentUser, createUser, updateUser, deleteUser } from './routes/users.js'
 import { testConnection, closeConnection } from './services/testConnection.js'
 import { createUserStock, deleteUserStock, getUserStocks } from './routes/userStocks.js'
+import redisClient from './config/redis.js'
 
 const app = express()
 const PORT = process.env.PORT || 4040
@@ -53,21 +54,28 @@ const server = app.listen(PORT, async () => {
 })
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server')
+async function shutdown () {
+  console.log('Shutting down gracefully...')
   server.close(async () => {
     console.log('HTTP server closed')
     await closeConnection()
+    try {
+      await redisClient.quit()
+      console.log('Redis connection closed')
+    } catch (error) {
+      console.error('Error closing Redis connection:', error)
+    }
     process.exit(0)
   })
+}
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM signal received')
+  await shutdown()
 })
 
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server')
-  server.close(async () => {
-    console.log('HTTP server closed')
-    await closeConnection()
-    process.exit(0)
-  })
+  console.log('SIGINT signal received')
+  await shutdown()
 })
 

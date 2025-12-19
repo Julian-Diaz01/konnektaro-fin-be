@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import YahooFinance from 'yahoo-finance2'
+import { getCache, setCache, getChartCacheKey, getQuoteCacheKey } from '../services/cache.js'
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
 
@@ -34,6 +35,18 @@ export async function getChart (req: Request, res: Response): Promise<void> {
   }
 
   try {
+    // Check cache first
+    const cacheKey = getChartCacheKey(symbol, interval, range)
+    const cachedData = await getCache<{ timestamp: number[]; closes: (number | null)[] }>(cacheKey)
+    
+    if (cachedData) {
+      console.log(`Cache hit for chart: ${symbol} (${interval}, ${range})`)
+      res.json(cachedData)
+      return
+    }
+
+    // Cache miss - fetch from Yahoo Finance
+    console.log(`Cache miss for chart: ${symbol} (${interval}, ${range})`)
     const startDate = getStartDate(range)
     const result = await yahooFinance.chart(symbol, {
       interval: interval as '1d' | '5m' | '1h' | '15m' | '30m' | '60m' | '1wk' | '1mo',
@@ -48,6 +61,9 @@ export async function getChart (req: Request, res: Response): Promise<void> {
       timestamp: chartData.quotes.map((q) => Math.floor(q.date.getTime() / 1000)),
       closes: chartData.quotes.map((q) => q.close ?? null)
     }
+
+    // Store in cache
+    await setCache(cacheKey, data)
 
     res.json(data)
   } catch (error) {
@@ -67,6 +83,23 @@ export async function getQuotes (req: Request, res: Response): Promise<void> {
   const symbols = symbolsParam.split(',').filter(s => s.trim())
 
   try {
+    // Check cache first
+    const cacheKey = getQuoteCacheKey(symbols)
+    const cachedData = await getCache<{ quotes: Array<{
+      symbol: string
+      regularMarketPrice?: number
+      regularMarketChange?: number
+      regularMarketChangePercent?: number
+    }> }>(cacheKey)
+    
+    if (cachedData) {
+      console.log(`Cache hit for quotes: ${symbols.join(',')}`)
+      res.json(cachedData)
+      return
+    }
+
+    // Cache miss - fetch from Yahoo Finance
+    console.log(`Cache miss for quotes: ${symbols.join(',')}`)
     const results = await yahooFinance.quote(symbols) as Array<{
       symbol: string
       regularMarketPrice?: number
@@ -74,14 +107,19 @@ export async function getQuotes (req: Request, res: Response): Promise<void> {
       regularMarketChangePercent?: number
     }>
 
-    const data = results.map((q) => ({
-      symbol: q.symbol,
-      regularMarketPrice: q.regularMarketPrice,
-      regularMarketChange: q.regularMarketChange,
-      regularMarketChangePercent: q.regularMarketChangePercent
-    }))
+    const data = {
+      quotes: results.map((q) => ({
+        symbol: q.symbol,
+        regularMarketPrice: q.regularMarketPrice,
+        regularMarketChange: q.regularMarketChange,
+        regularMarketChangePercent: q.regularMarketChangePercent
+      }))
+    }
 
-    res.json({ quotes: data })
+    // Store in cache
+    await setCache(cacheKey, data)
+
+    res.json(data)
   } catch (error) {
     console.error('Error fetching quotes:', error)
     res.status(500).json({ error: 'Failed to fetch quotes' })
