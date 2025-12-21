@@ -21,7 +21,6 @@ export async function setCache<T> (key: string, value: T): Promise<void> {
     await redisClient.setEx(key, CACHE_TTL_SECONDS, JSON.stringify(value))
   } catch (error) {
     console.error(`Error setting cache for key ${key}:`, error)
-    // Don't throw - cache failures shouldn't break the application
   }
 }
 
