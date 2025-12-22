@@ -1,6 +1,6 @@
 import redisClient from '../config/redis.js'
 
-const CACHE_TTL_SECONDS = 15 * 60 // 15 minutes
+const CACHE_TTL_SECONDS = 15 * 60
 
 export async function getCache<T> (key: string): Promise<T | null> {
   try {
@@ -30,7 +30,6 @@ export function getChartCacheKey (symbol: string, interval: string, range: strin
 }
 
 export function getQuoteCacheKey (symbols: string[]): string {
-  // Sort symbols to ensure consistent cache keys
   const sortedSymbols = [...symbols].sort().join(',')
   return `yahoo:quote:${sortedSymbols}`
 }
