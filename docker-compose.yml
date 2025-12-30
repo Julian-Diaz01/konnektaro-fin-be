@@ -13,6 +13,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -23,6 +28,48 @@ services:
       - redis_data:/data
     restart: unless-stopped
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: konnektaro-app
+    ports:
+      - "4040:4040"
+    environment:
+      # Server
+      PORT: 4040
+      NODE_ENV: production
+      
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: konnektaro_fin
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      
+      # Redis
+      REDIS_URL: redis://redis:6379
+      
+      # Firebase (can be set via env file or use service account file)
+      # FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      # FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      # FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      # FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-service-account.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      # Mount Firebase service account file if needed (optional)
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
 
 volumes:
   postgres_data:
