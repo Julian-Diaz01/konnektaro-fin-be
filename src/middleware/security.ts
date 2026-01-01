@@ -30,7 +30,7 @@ export function setupSecurity (app: Express): void {
     permittedCrossDomainPolicies: { permittedPolicies: 'none' }
   }))
 
-  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000']
+  const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',')
 
   app.use(cors({
     origin: (origin, callback) => {
@@ -44,7 +44,7 @@ export function setupSecurity (app: Express): void {
             return
           }
 
-      if (allowedOrigins.includes(origin)) {
+      if (allowedOrigins?.includes(origin)) {
         callback(null, true)
       } else {
         callback(new Error('Not allowed by CORS'))
