@@ -34,15 +34,12 @@ export function setupSecurity (app: Express): void {
 
   app.use(cors({
     origin: (origin, callback) => {
-    if (!origin) {
-            // In production reject requests without origin
-            if (process.env.NODE_ENV === 'production') {
-              callback(new Error('Origin required'))
-              return
-            }
-            callback(null, true)
-            return
-          }
+      // Allow requests without origin for health checks and internal services
+      if (!origin) {
+        // In production, allow health checks without origin (for monitoring/load balancers)
+        callback(null, true)
+        return
+      }
 
       if (allowedOrigins?.includes(origin)) {
         callback(null, true)
