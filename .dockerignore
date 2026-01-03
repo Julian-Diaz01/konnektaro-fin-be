@@ -12,10 +12,14 @@ dist
 .idea
 *.md
 README.md
+CLOUDFLARE_TUNNEL_SETUP.md
 docker-compose.yml
 Dockerfile
 .dockerignore
 coverage
 .nyc_output
 .DS_Store
+.cloudflared/credentials.json
+.cloudflared/*.json
+.cloudflared/config.yml
 
