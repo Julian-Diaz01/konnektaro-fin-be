@@ -17,7 +17,7 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
   redis:
     image: redis:7-alpine
@@ -32,7 +32,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 3
 
   app:
     build:
@@ -45,6 +45,7 @@ services:
       # Server
       PORT: 4040
       NODE_ENV: production
+      ALLOWED_ORIGINS: https://fin.konnektaro.com
       
       # Database
       DB_HOST: postgres
@@ -61,6 +62,12 @@ services:
       # FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
       # FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
       # FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-service-account.json
+      
+      # Cloudflare Tunnel Configuration
+      # Option 1: Use tunnel token (quickest setup)
+      # CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+      # Option 2: Use named tunnel with UUID
+      CLOUDFLARE_TUNNEL_UUID: b03486ef-afa8-4d53-bb39-3ad22d272792
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,6 +77,8 @@ services:
     volumes:
       # Mount Firebase service account file if needed (optional)
       - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+      # Mount Cloudflare tunnel config (if using named tunnel)
+      - ./.cloudflared:/app/.cloudflared:ro
 
 volumes:
   postgres_data:
