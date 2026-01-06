@@ -57,16 +57,7 @@ services:
       # Redis
       REDIS_URL: redis://redis:6379
       
-      # Firebase (can be set via env file or use service account file)
-      # FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
-      # FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
-      # FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
-      # FIREBASE_SERVICE_ACCOUNT_PATH: /app/firebase-service-account.json
-      
-      # Cloudflare Tunnel Configuration
-      # Option 1: Use tunnel token (quickest setup)
-      # CLOUDFLARE_TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
-      # Option 2: Use named tunnel with UUID
+
       CLOUDFLARE_TUNNEL_UUID: b03486ef-afa8-4d53-bb39-3ad22d272792
     depends_on:
       postgres:
