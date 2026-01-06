@@ -25,7 +25,7 @@ firebase-service-account.json
 .cloudflared/credentials.json
 .cloudflared/*.json
 .cloudflared/cert.pem
-!.cloudflared/config.yml
+.cloudflared/config.yml
 
 # Docker
 .docker/
