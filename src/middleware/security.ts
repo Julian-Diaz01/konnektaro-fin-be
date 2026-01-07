@@ -51,7 +51,9 @@ export function setupSecurity (app: Express): void {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining'],
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   }))
 
   const limiter = rateLimit({
