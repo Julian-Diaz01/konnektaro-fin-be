@@ -1,20 +1,18 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
     container_name: konnektaro-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB:-konnektaro_fin}
+      POSTGRES_USER: ${POSTGRES_USER:-${DB_USER}}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-${DB_PASSWORD}}
+      POSTGRES_DB: ${POSTGRES_DB:-${DB_NAME}}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-${DB_USER}}"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -48,10 +46,10 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       
       # Database
-      DB_HOST: ${DB_HOST:-postgres}
+      DB_HOST: postgres
       DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-konnektaro_fin}
-      DB_USER: ${DB_USER:-postgres}
+      DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       
       # Redis
@@ -68,8 +66,7 @@ services:
     volumes:
       # Mount Firebase service account file if needed (optional, can use env vars instead)
       - ./firebase-service-account.json:/app/firebase-service-account.json:ro
-      # Mount Cloudflare tunnel config (if using named tunnel)
-      - ./.cloudflared:/app/.cloudflared:ro
+      - ./.cloudflared:/app/.cloudflared:rw
 
 volumes:
   postgres_data:
