@@ -1,7 +1,26 @@
 import { createClient } from 'redis'
 
+
+const getRedisUrl = (): string => {
+  const envUrl = process.env.REDIS_URL
+  
+  if (envUrl) {
+    // If it's set to Docker service name but we're running locally, fix it
+    if (envUrl.includes('redis://redis:') && process.env.DB_HOST === 'localhost') {
+      return envUrl.replace('redis://redis:', 'redis://localhost:')
+    }
+    return envUrl
+  }
+  
+  // Default to localhost for local development
+  return 'redis://localhost:6379'
+}
+
+const redisUrl = getRedisUrl()
+console.log(`🔗 Connecting to Redis at: ${redisUrl}`)
+
 const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379',
+  url: redisUrl,
   socket: {
     reconnectStrategy: (retries) => {
       if (retries > 10) {
