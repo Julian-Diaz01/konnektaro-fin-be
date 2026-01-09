@@ -1,8 +1,6 @@
 import type { Request, Response } from 'express'
-import YahooFinance from 'yahoo-finance2'
 import { getCache, setCache, getChartCacheKey, getQuoteCacheKey } from '../services/cache.js'
-
-const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
+import { getQuotes as fetchQuotes, getChart as fetchChart } from '../utils/yahooRetry.js'
 
 function getStartDate (range: string): Date {
   const now = new Date()
@@ -22,6 +20,13 @@ function getStartDate (range: string): Date {
     default:
       return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
   }
+}
+
+function isRateLimitError (error: any): boolean {
+  return error?.status === 429 || 
+         error?.message?.includes('429') || 
+         error?.message?.includes('Too Many Requests') ||
+         error?.message?.includes('Failed to get crumb')
 }
 
 export async function getChart (req: Request, res: Response): Promise<void> {
@@ -48,14 +53,11 @@ export async function getChart (req: Request, res: Response): Promise<void> {
     // Cache miss - fetch from Yahoo Finance
     console.log(`Cache miss for chart: ${symbol} (${interval}, ${range})`)
     const startDate = getStartDate(range)
-    const result = await yahooFinance.chart(symbol, {
+    const chartData = await fetchChart(symbol, {
       interval: interval as '1d' | '5m' | '1h' | '15m' | '30m' | '60m' | '1wk' | '1mo',
       period1: startDate,
-      period2: new Date(),
-      return: 'array' as const
+      period2: new Date()
     })
-
-    const chartData = result as { quotes: Array<{ date: Date; close: number | null }> }
 
     const data = {
       timestamp: chartData.quotes.map((q) => Math.floor(q.date.getTime() / 1000)),
@@ -100,12 +102,7 @@ export async function getQuotes (req: Request, res: Response): Promise<void> {
 
     // Cache miss - fetch from Yahoo Finance
     console.log(`Cache miss for quotes: ${symbols.join(',')}`)
-    const results = await yahooFinance.quote(symbols) as Array<{
-      symbol: string
-      regularMarketPrice?: number
-      regularMarketChange?: number
-      regularMarketChangePercent?: number
-    }>
+    const results = await fetchQuotes(symbols)
 
     const data = {
       quotes: results.map((q) => ({
@@ -120,9 +117,13 @@ export async function getQuotes (req: Request, res: Response): Promise<void> {
     await setCache(cacheKey, data)
 
     res.json(data)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching quotes:', error)
-    res.status(500).json({ error: 'Failed to fetch quotes' })
+    const statusCode = isRateLimitError(error) ? 429 : 500
+    const errorMessage = isRateLimitError(error)
+      ? 'Rate limit exceeded. Please try again later.'
+      : 'Failed to fetch quotes'
+    res.status(statusCode).json({ error: errorMessage })
   }
 }
 
