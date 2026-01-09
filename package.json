@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "docker:rebuild-app": "docker-compose build app && docker-compose up -d --no-deps app",
     "services:start": "docker-compose up -d postgres redis",
     "services:stop": "docker-compose stop postgres redis",
     "services:down": "docker-compose down",
