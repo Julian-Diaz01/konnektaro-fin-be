@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: konnektaro-postgres
+    restart: always
+    networks:
+      - konnektaro-fin_network
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data:rw
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+
+  redis:
+    image: redis:7-alpine
+    container_name: konnektaro-redis
+    restart: always
+    networks:
+      - konnektaro-fin_network
+    volumes:
+      - ./data/redis:/data:rw
+    command: redis-server --appendonly yes
+
+  app:
+    image: ${DOCKER_REGISTRY:-192.168.178.43:5000}/konnektaro-fin-be:latest
+    pull_policy: always
+    container_name: konnektaro-fin
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4040}:4040"
+    networks:
+      - konnektaro-fin_network
+    links:
+      - postgres
+      - redis
+    volumes:
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+      - ./.cloudflared/credentials.json:/app/.cloudflared/credentials.json:ro
+      - ./.cloudflared/config.yml:/app/.cloudflared/config.yml:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=${PORT:-4040}
+      # Firebase: use file mount (./firebase-service-account.json) OR env vars below
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/firebase-service-account.json
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_URL=redis://redis:6379
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - CLOUDFLARE_TUNNEL_UUID=${CLOUDFLARE_TUNNEL_UUID}
+    depends_on:
+      - postgres
+      - redis
+
+networks:
+  konnektaro-fin_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
