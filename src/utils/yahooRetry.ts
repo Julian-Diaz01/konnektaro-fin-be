@@ -6,7 +6,7 @@ const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] })
 const MAX_REQUESTS_PER_MINUTE = 3
 const RATE_LIMIT_KEY = 'yahoo:rate_limit:requests'
 const MAX_RETRIES = 8
-const RETRY_DELAY_MS = 5000
+const RETRY_DELAY_MS = 2000
 
 async function sleep (ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -37,10 +37,10 @@ async function enforceRateLimit (): Promise<void> {
       await redisClient.incr(RATE_LIMIT_KEY)
     }
     
-    await sleep(20000) // 20 seconds between requests
+    await sleep(3000)
   } catch (error) {
     console.warn('⚠️  Rate limit check failed, adding safety delay:', error)
-    await sleep(1000)
+    await sleep(500)
   }
 }
 
