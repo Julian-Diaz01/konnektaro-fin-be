@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express'
 import { getCache, setCache, getChartCacheKey, getQuoteCacheKey } from '../services/cache.js'
-import { getQuotes as fetchQuotes, getChart as fetchChart } from '../utils/yahooRetry.js'
+import { getQuotes as fetchQuotes } from '../utils/yahooRetry.js'
+import { getChartData } from '../services/chartDataService.js'
 
 function getStartDate (range: string): Date {
   const now = new Date()
@@ -50,27 +51,31 @@ export async function getChart (req: Request, res: Response): Promise<void> {
       return
     }
 
-    // Cache miss - fetch from Yahoo Finance
+    // Cache miss - fetch from ChartDataService (which handles DB + Yahoo)
     console.log(`Cache miss for chart: ${symbol} (${interval}, ${range})`)
     const startDate = getStartDate(range)
-    const chartData = await fetchChart(symbol, {
-      interval: interval as '1d' | '5m' | '1h' | '15m' | '30m' | '60m' | '1wk' | '1mo',
-      period1: startDate,
-      period2: new Date()
-    })
+    const data = await getChartData(
+      symbol,
+      interval as '1d' | '5m' | '1h' | '15m' | '30m' | '60m' | '1wk' | '1mo',
+      startDate,
+      new Date()
+    )
 
-    const data = {
-      timestamp: chartData.quotes.map((q) => Math.floor(q.date.getTime() / 1000)),
-      closes: chartData.quotes.map((q) => q.close ?? null)
+    // Guarantee response shape for UI: { timestamp: number[], closes: (number | null)[] }
+    const payload: { timestamp: number[]; closes: (number | null)[] } = {
+      timestamp: Array.isArray(data.timestamp) ? data.timestamp : [],
+      closes: Array.isArray(data.closes) ? data.closes : []
     }
 
-    // Store in cache
-    await setCache(cacheKey, data)
-
-    res.json(data)
-  } catch (error) {
+    await setCache(cacheKey, payload)
+    res.json(payload)
+  } catch (error: any) {
     console.error(`Error fetching chart for ${symbol}:`, error)
-    res.status(500).json({ error: 'Failed to fetch chart data' })
+    const statusCode = isRateLimitError(error) ? 429 : 500
+    const message = isRateLimitError(error)
+      ? 'Rate limit exceeded. Please try again later.'
+      : 'Failed to fetch chart data. The symbol may be invalid or data temporarily unavailable.'
+    res.status(statusCode).json({ error: message })
   }
 }
 
