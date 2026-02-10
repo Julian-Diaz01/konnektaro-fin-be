@@ -2,10 +2,13 @@ import 'dotenv/config'
 import express from 'express'
 import { setupSecurity } from './middleware/security.js'
 import { authenticateToken, AuthenticatedRequest } from './middleware/auth.js'
+import { userRateLimiter } from './middleware/rateLimit.js'
 import { getChart, getQuotes } from './routes/marketData.js'
 import { getCurrentUser, createUser, updateUser, deleteUser } from './routes/users.js'
 import { testConnection, closeConnection } from './services/testConnection.js'
 import { createUserStock, deleteUserStock, getUserStocks } from './routes/userStocks.js'
+import { getDashboardOverview } from './routes/dashboard.js'
+import { dailyResumeGenerate } from './routes/dailyResumeAdmin.js'
 import redisClient from './config/redis.js'
 
 const app = express()
@@ -19,9 +22,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-// Market data endpoints
-app.get('/api/market-data/stocks/chart', authenticateToken, getChart)
-app.get('/api/market-data/stocks/quotes', authenticateToken, getQuotes)
+// Market data endpoints (with per-user rate limiting: 20 requests/minute)
+app.get('/api/market-data/stocks/chart', authenticateToken, userRateLimiter, getChart)
+app.get('/api/market-data/stocks/quotes', authenticateToken, userRateLimiter, getQuotes)
+
+// Dashboard endpoints
+app.get('/api/dashboard/overview', authenticateToken, getDashboardOverview)
 
 // Portfolio endpoints
 app.get('/api/portfolio/stocks', authenticateToken, getUserStocks)
@@ -32,6 +38,9 @@ app.delete('/api/portfolio/stocks/:id', authenticateToken, deleteUserStock)
 app.get('/api/user', authenticateToken, (req: AuthenticatedRequest, res) => {
   res.json({ user: req.user })
 })
+
+// Admin endpoints (protected by x-admin-secret header)
+app.post('/api/admin/resume/daily-generate', dailyResumeGenerate)
 
 // User routes
 app.get('/api/users/me', authenticateToken, getCurrentUser)
